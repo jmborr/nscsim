@@ -83,8 +83,8 @@ def sphere_average(q_mod_array=None, q_mod_min=None, q_mod_max=None,
 
     Parameters
     ----------
-    q_mod_array: numpy.ndarray
-        Array of q-vector moduli
+    q_mod_array:
+        Array of q-vector moduli (list, tuple, numpy.ndarray, iterator..)
     q_mod_min: float
         Minimum q-vector modulus
     q_mod_max: float
@@ -102,7 +102,7 @@ def sphere_average(q_mod_array=None, q_mod_min=None, q_mod_max=None,
     """
 
     if q_mod_array is not None:
-        q_mods = q_mod_array
+        q_mods = np.asarray(q_mod_array)
     else:
         q_mods = q_mod_array_generator(q_mod_min, q_mod_max,
                                        q_mod_delta, n_q_mod)
