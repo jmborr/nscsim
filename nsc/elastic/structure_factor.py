@@ -20,20 +20,21 @@ def vector_structure_factor(q, tr, sl):
     -------
     numpy.ndarray
         array of shape=(#vectors). Structure factor normalized by number
-        of frames and number of atoms
+        of frames, number of atoms, and the square of the average scattering
+        length
     """
     sq = list()
     # iterate over each q-vector, v.shape=(3,)
     for v in q:
-        real = 0.0
-        imag = 0.0
+        s = 0.0
         # iterate over each frame, fr.shape = (atoms, 3)
         for fr in tr:
             vfr = np.dot(fr, v)  # vfr.shape=(#atoms)
-            real += np.dot(sl, np.cos(vfr))
-            imag += np.dot(sl, np.sin(vfr))
-        sq.append((real * real) + (imag * imag))
-    return np.asarray(sq) / (len(tr) * len(sl))  # 1/(#frames * #atoms)
+            real = np.dot(sl, np.cos(vfr))
+            imag = np.dot(sl, np.sin(vfr))
+            s += (real * real) + (imag * imag)
+        sq.append(s)
+    return np.asarray(sq) / (len(tr) * np.square(np.sum(sl)))
 
 
 def structure_factor(q, tr, sl):
@@ -55,10 +56,12 @@ def structure_factor(q, tr, sl):
     -------
     numpy.ndarray
         If q.shape=(#vectors, 3), returns shape=(#vectors) and the structure
-        factor is number of frames and number of atoms. If
+        factor is normalized by the number of frames, number of atoms,
+        and the square of the average scattering length. If
         q.shape=(#sets, #vectors, 3), returns shape=(#sets) and the
         structure factor is normalized by the number of vectors in each set,
-        the number of frames, and number of atoms.
+        the number of frames, the number of atoms, and the square of
+        the average scattering length.
     """
     if q.ndim == 2:
         return vector_structure_factor(q, tr, sl)
