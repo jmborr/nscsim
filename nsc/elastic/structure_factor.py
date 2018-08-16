@@ -14,7 +14,7 @@ def vector_structure_factor(q, tr, sl):
     tr: numpy.ndarray
         atomic trajectory shape=(#frames, #atoms, 3)
     sl: numpy.ndarray
-        scattering lengths shape=(#atoms)
+        coherent scattering lengths shape=(#atoms)
 
     Returns
     -------
@@ -50,7 +50,7 @@ def structure_factor(q, tr, sl):
     tr: numpy.ndarray
         atomic trajectory shape=(#frames, #atoms, 3)
     sl: numpy.ndarray
-        scattering lengths shape=(#atoms)
+        coherent scattering lengths shape=(#atoms)
 
     Returns
     -------
