@@ -13,8 +13,8 @@ def test_vector_structure_factor():
     shape = (n_frames, n_atoms, 3)
     tr = np.random.random_sample(n_frames * n_atoms * 3).reshape(shape)
     q = np.zeros(n_vectors * 3).reshape((n_vectors, 3))
-    sl = np.ones(n_atoms)
-    s = sf.vector_structure_factor(q, tr, sl)
+    b_c = np.ones(n_atoms)
+    s = sf.vector_structure_factor(q, tr, b_c)
     np.array_equal(s, np.ones(n_vectors))
 
 
@@ -26,8 +26,8 @@ def test_structure_factor():
     shape = (n_frames, n_atoms, 3)
     tr = np.random.random_sample(n_frames * n_atoms * 3).reshape(shape)
     q = np.zeros(n_sets * n_vectors * 3).reshape((n_sets, n_vectors, 3))
-    sl = np.ones(n_atoms)
-    s = sf.structure_factor(q, tr, sl)
+    b_c = np.ones(n_atoms)
+    s = sf.structure_factor(q, tr, b_c)
     np.array_equal(s, np.ones(n_sets))
 
 
