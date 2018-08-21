@@ -3,7 +3,7 @@ from __future__ import (print_function, absolute_import)
 import numpy as np
 
 
-def vector_structure_factor(q, tr, sl):
+def vector_structure_factor(q, tr, b_c):
     """
     Calculate the static structure factor for each vector of a set of q-vectors
 
@@ -13,8 +13,8 @@ def vector_structure_factor(q, tr, sl):
         q vectors shape=(#vectors, 3)
     tr: numpy.ndarray
         atomic trajectory shape=(#frames, #atoms, 3)
-    sl: numpy.ndarray
-        coherent scattering lengths shape=(#atoms)
+    b_c: numpy.ndarray
+        Real part of the bound coherent scattering lengths shape=(#atoms)
 
     Returns
     -------
@@ -30,14 +30,14 @@ def vector_structure_factor(q, tr, sl):
         # iterate over each frame, fr.shape = (atoms, 3)
         for fr in tr:
             vfr = np.dot(fr, v)  # vfr.shape=(#atoms)
-            real = np.dot(sl, np.cos(vfr))
-            imag = np.dot(sl, np.sin(vfr))
+            real = np.dot(b_c, np.cos(vfr))
+            imag = np.dot(b_c, np.sin(vfr))
             s += (real * real) + (imag * imag)
         sq.append(s)
-    return np.asarray(sq) / (len(tr) * np.square(np.sum(sl)))
+    return np.asarray(sq) / (len(tr) * np.square(np.sum(b_c)))
 
 
-def structure_factor(q, tr, sl):
+def structure_factor(q, tr, b_c):
     """
     Calculate the static structure factor for each vector of a set of q-vectors
     or for each set average in a list of sets of q-vectors.
@@ -49,8 +49,8 @@ def structure_factor(q, tr, sl):
         shape=(#sets, #vectors, 3) for a list of sets of q-vectors
     tr: numpy.ndarray
         atomic trajectory shape=(#frames, #atoms, 3)
-    sl: numpy.ndarray
-        coherent scattering lengths shape=(#atoms)
+    b_c: numpy.ndarray
+        Real part of the bound coherent scattering lengths shape=(#atoms)
 
     Returns
     -------
@@ -64,7 +64,7 @@ def structure_factor(q, tr, sl):
         the average scattering length.
     """
     if q.ndim == 2:
-        return vector_structure_factor(q, tr, sl)
+        return vector_structure_factor(q, tr, b_c)
     elif q.ndim == 3:
-        return np.asarray([np.mean(vector_structure_factor(v, tr, sl))
+        return np.asarray([np.mean(vector_structure_factor(v, tr, b_c))
                            for v in q])
