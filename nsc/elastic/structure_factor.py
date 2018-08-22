@@ -3,6 +3,7 @@ from __future__ import (print_function, absolute_import)
 import numpy as np
 from tqdm import tqdm as progress_bar
 
+
 def vector_structure_factor(q, tr, b_c):
     """
     Calculate the static structure factor for each vector of a set of q-vectors
