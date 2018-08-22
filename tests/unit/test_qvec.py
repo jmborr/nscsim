@@ -13,9 +13,9 @@ def test_unit_sphere_surf():
 
 
 def test_q_mod_array_generator():
-    for qs in (qvec.q_mod_array_generator(0, q_mod_max=1.0, q_mod_delta=0.1),
-               qvec.q_mod_array_generator(0, q_mod_max=1.0, n_q_mod=10),
-               qvec.q_mod_array_generator(0, q_mod_delta=0.1, n_q_mod=10)):
+    for qs in (qvec.moduli(0, q_mod_max=1.0, q_mod_delta=0.1),
+               qvec.moduli(0, q_mod_max=1.0, n_q_mod=10),
+               qvec.moduli(0, q_mod_delta=0.1, n_q_mod=10)):
         assert np.array_equal(qs, np.arange(0, 1.0, 0.1))
 
 

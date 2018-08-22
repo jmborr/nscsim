@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Top-level package for idpflex."""
+"""Top-level package for nsc."""
 
 __author__ = 'Jose Borreguero'
 __email__ = 'borreguero@gmail.com'
