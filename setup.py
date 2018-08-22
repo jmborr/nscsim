@@ -3,6 +3,8 @@
 
 """The setup script."""
 
+import nsc
+
 from setuptools import setup, find_packages
 
 with open('README.rst') as readme_file:
@@ -25,7 +27,7 @@ test_requirements = [
 
 setup(
     name='nsc',
-    version='0.0.0',
+    version=nsc.__version__,
     long_description=readme,
     author="Jose Borreguero",
     author_email='borreguero@gmail.com',

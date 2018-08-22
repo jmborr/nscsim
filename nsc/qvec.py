@@ -24,8 +24,8 @@ def unit_sphere_surf(nvec=200):
     return v / np.linalg.norm(v, axis=1)[:, None]
 
 
-def q_mod_array_generator(q_mod_min, q_mod_max=None, q_mod_delta=None,
-                          n_q_mod=None):
+def moduli(q_mod_min, q_mod_max=None, q_mod_delta=None,
+           n_q_mod=None):
     """
     An array of q vector moduli (q_mods) is generated depending on the passed
     arguments. These are the options:
@@ -104,7 +104,7 @@ def sphere_average(q_mod_array=None, q_mod_min=None, q_mod_max=None,
     if q_mod_array is not None:
         q_mods = np.asarray(q_mod_array)
     else:
-        q_mods = q_mod_array_generator(q_mod_min, q_mod_max,
-                                       q_mod_delta, n_q_mod)
+        q_mods = moduli(q_mod_min, q_mod_max,
+                        q_mod_delta, n_q_mod)
 
     return np.tensordot(q_mods, unit_sphere_surf(nvec), axes=0)
