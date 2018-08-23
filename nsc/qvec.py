@@ -24,8 +24,8 @@ def unit_sphere_surf(nvec=200):
     return v / np.linalg.norm(v, axis=1)[:, None]
 
 
-def moduli(q_mod_min, q_mod_max=None, q_mod_delta=None,
-           n_q_mod=None):
+def moduli_linscale(q_mod_min, q_mod_max=None, q_mod_delta=None,
+                    n_q_mod=None):
     """
     An array of q vector moduli (q_mods) is generated depending on the passed
     arguments. These are the options:
@@ -50,7 +50,6 @@ def moduli(q_mod_min, q_mod_max=None, q_mod_delta=None,
         Array of q-vector moduli
     """
     q_mods = None
-
     if q_mod_max is not None:
         if q_mod_delta is not None:
             # q_mods from triad (q_mod_min, q_mod_max, q_mod_delta)
@@ -69,30 +68,38 @@ def moduli(q_mod_min, q_mod_max=None, q_mod_delta=None,
     return q_mods
 
 
-def sphere_average(q_mod_array=None, q_mod_min=None, q_mod_max=None,
-                   q_mod_delta=None, n_q_mod=None, nvec=200):
+def moduli_logscale(min_exp, max_exp, n_per_base=10, base=10):
+    """
+    An array of q vector moduli (q_mods) on a logarithmic scale.
+
+    Parameters
+    ----------
+    min_exp: float
+        minimum q modulus is base**min_exp. Example: 0.1 = 10**(-1)
+    max_exp: float
+        maximum q modulus is base**max_exp. Exaple: 100 = 10**2
+    n_per_base: int
+        number of q moduli between base**N and base**(N+1)
+    base: int
+        base of the logarithm
+
+    Returns
+    -------
+    numpy.ndarray
+        Array of q-vector moduli
+    """
+    n_mods = (max_exp - min_exp) * n_per_base
+    return np.logspace(min_exp, max_exp, num=n_mods, endpoint=True, base=base)
+
+
+def sphere_average(q_mod_array, nvec=200):
     """
     Set of q-vectors with random orientations and of specified moduli.
-
-    An array of q vector moduli (q_mods) will be used that will depend
-    on the passed arguments. These are the options:
-    1. q_mod_array is referenced by q_mods
-    2. (q_mod_min, q_mod_max, q_mod_delta) generates q_mods
-    3. (q_mod_min, q_mod_max, n_q_mod) generates q_mods
-    4. (q_mod_min, q_mod_delta, n_q_mod) generates q_mods
 
     Parameters
     ----------
     q_mod_array:
         Array of q-vector moduli (list, tuple, numpy.ndarray, iterator..)
-    q_mod_min: float
-        Minimum q-vector modulus
-    q_mod_max: float
-        Maximum q-vector modulus
-    q_mod_delta: float
-        Increase in q-vector modulus
-    n_q_mod: int
-        Number of q-vector moduli
     nvec: int
         Number of orientations. Must be an even number
     Returns
@@ -101,10 +108,5 @@ def sphere_average(q_mod_array=None, q_mod_min=None, q_mod_max=None,
         Array of vectors, shape = (len(q_mods), nvec, 3)
     """
 
-    if q_mod_array is not None:
-        q_mods = np.asarray(q_mod_array)
-    else:
-        q_mods = moduli(q_mod_min, q_mod_max,
-                        q_mod_delta, n_q_mod)
-
+    q_mods = np.asarray(q_mod_array)
     return np.tensordot(q_mods, unit_sphere_surf(nvec), axes=0)
