@@ -19,6 +19,11 @@ def test_moduli_linscale():
         assert np.array_equal(qs, np.arange(0, 1.0, 0.1))
 
 
+def test_moduli_logscale():
+    qs = qvec.moduli_logscale(-1, 2)
+    assert np.array_equal(qs, np.logspace(-1, 2, num=30))
+
+
 def test_sphere_average():
     qs = qvec.sphere_average(range(1, 10))
     assert np.array_equal(9 * qs[0], qs[-1])
