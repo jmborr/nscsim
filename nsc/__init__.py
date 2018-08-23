@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# flake8: noqa: F401
 
 """Top-level package for nsc."""
 from __future__ import absolute_import
