@@ -35,7 +35,7 @@ before_script: # configure a headless display to test plot generation
 - sleep 3 # give xvfb some time to start
 
 script:
-  - pytest --cov=nsc tests/unit
+  - pytest --cov=nscsim tests/unit
   - if [[ "${TRAVIS_PYTHON_VERSION}" == "3.6" ]]; then
         flake8;
     fi

@@ -3,7 +3,7 @@ from __future__ import (print_function, absolute_import)
 import numpy as np
 import pytest
 
-from nsc.elastic import structure_factor as sf
+from nscsim.elastic import structure_factor as sf
 
 
 def test_vector_structure_factor():

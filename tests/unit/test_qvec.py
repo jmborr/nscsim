@@ -3,7 +3,7 @@ from __future__ import (print_function, absolute_import)
 import numpy as np
 import pytest
 
-from nsc import qvec
+from nscsim import qvec
 
 
 def test_unit_sphere_surf():
