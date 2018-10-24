@@ -3,7 +3,7 @@
 
 """The setup script."""
 
-import nsc
+import nscsim
 
 from setuptools import setup, find_packages
 
@@ -11,7 +11,7 @@ with open('README.rst') as readme_file:
     readme = readme_file.read()
 
 requirements = [
-    'future', 'numpy', 'six', 'tqdm'
+    'future', 'numpy', 'scipy', 'six', 'tqdm'
     # TODO: put package requirements here
 ]
 
@@ -26,18 +26,18 @@ test_requirements = [
 ]
 
 setup(
-    name='nsc',
-    version=nsc.__version__,
+    name='nscsim',
+    version=nscsim.__version__,
     long_description=readme,
     author="Jose Borreguero",
     author_email='borreguero@gmail.com',
-    url='https://github.com/jmborr/nsc',
-    packages=find_packages(include=['nsc']),
+    url='https://github.com/jmborr/nscsim',
+    packages=find_packages(include=['nscsim']),
     include_package_data=True,
     install_requires=requirements,
     license="MIT license",
     zip_safe=False,
-    keywords='nsc',
+    keywords='nscsim',
     classifiers=[
         'Development Status :: 0 - Alpha',
         'Intended Audience :: Science/Research',
