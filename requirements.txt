@@ -1,4 +1,5 @@
 future
 numpy
+scipy
 six
 tqdm
