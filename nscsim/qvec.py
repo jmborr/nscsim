@@ -317,4 +317,3 @@ def reciprocal_average(q_mod_bins, lattice, max_nvec=200):
         else:
             q_arrays.append(selected)
     return q_arrays
-

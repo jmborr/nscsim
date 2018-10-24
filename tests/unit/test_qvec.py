@@ -72,7 +72,7 @@ def test_reciprocal_qvectors():
 def test_reciprocal_qmoduli():
     d = qvec.reciprocal_descriptors([2*np.pi, 2*np.pi, 2*np.pi, 90., 90., 90])
     rm = qvec.reciprocal_qmoduli(1, 1, 0, m_b=d['m_b']).flatten()
-    f=np.sqrt(2)
+    f = np.sqrt(2)
     assert_almost_equal(rm, (f, 1, f, 1, 0, 1, f, 1, f), decimal=3)
 
 
