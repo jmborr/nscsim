@@ -1,11 +1,12 @@
 from __future__ import (print_function, absolute_import)
 
 import numpy as np
-from math import pi, cos, sin, sqrt, acos, asin
+from scipy.linalg import norm
+from math import pi, cos, sin, sqrt, acos
 
 
 def unit_sphere_surf(nvec=200):
-    """
+    r"""
     Vectors randomly sampling the surface of the unit sphere.
 
     Ensures that for every vector v in the sampling, inverse vector -v is
@@ -24,14 +25,14 @@ def unit_sphere_surf(nvec=200):
     if nvec < 2 or nvec % 2 != 0:
         raise ValueError('number of vectors must be an even'
                          ' number equal to or bigger than 2')
-    v = np.random.normal(size=(nvec/2, 3))
+    v = np.random.normal(size=(int(nvec/2), 3))
     v /= np.linalg.norm(v, axis=1)[:, None]
     return np.append(v, -v, axis=0)
 
 
 def moduli_linscale(q_mod_min, q_mod_max=None, q_mod_delta=None,
                     n_q_mod=None):
-    """
+    r"""
     An array of q vector moduli (q_mods) is generated depending on the passed
     arguments. These are the options:
     1. (q_mod_min, q_mod_max, q_mod_delta) generates q_mods
@@ -74,7 +75,7 @@ def moduli_linscale(q_mod_min, q_mod_max=None, q_mod_delta=None,
 
 
 def moduli_logscale(min_exp, max_exp, n_per_base=10, base=10):
-    """
+    r"""
     An array of q vector moduli (q_mods) on a logarithmic scale.
 
     Parameters
@@ -98,7 +99,7 @@ def moduli_logscale(min_exp, max_exp, n_per_base=10, base=10):
 
 
 def sphere_average(q_mod_array, nvec=200):
-    """
+    r"""
     Set of q-vectors with random orientations and of specified moduli.
 
     Parameters
@@ -118,7 +119,7 @@ def sphere_average(q_mod_array, nvec=200):
 
 
 def reciprocal_descriptors(lattice):
-    """
+    r"""
     Compute parameters of interest of the reciprocal lattice.
 
     Crystallographic convention of defining the reciprocal lattice vectors
@@ -142,12 +143,12 @@ def reciprocal_descriptors(lattice):
         alpha_r, beta_r, gamma_r: angles, in degrees
         m_b: matrix where columns are the components of the reciprocal
             lattice vectors, assuming a oriented lattice.
+        f_vol: Volume of the direct cell in fractional coordinates
     """
-
     # Collect lattice parameters
     a, b, c = lattice[0:3]
     d2r = pi / 180.  # from degrees to radians
-    alpha, beta, gamma = d2r * lattice[3:]
+    alpha, beta, gamma = [d2r * x for x in lattice[3:]]
 
     # Volume of the direct cell in fractional coordinates
     f_vol = sqrt(1 - cos(alpha)**2 - cos(beta)**2 - cos(gamma)**2 +
@@ -181,17 +182,17 @@ def reciprocal_descriptors(lattice):
 
     return dict(a_r=a_r, b_r=b_r, c_r=c_r,
                 alpha_r=alpha_r/d2r, beta_r=beta_r/d2r, gamma_r=gamma_r/d2r,
-                m_b=m_b)
+                m_b=m_b, f_vol=f_vol)
 
 
 def reciprocal_max_indexes(q_mod, abc_r):
-    """
+    r"""
     Positive h, k, l indexes encompassing q_mod.
 
-    Consider a vector $\vec{Q}$ with modulus $q_{mod}$ pointing in the direction
-    of reciprocal vector $\vec{a^*}$. Then, $q_{mod} = 2 \pi h |\vec{a^*}|$
-    with $h$ the first Miller index. Similarly for $\vec{Q}$ pointing along
-    $\vec{b^*}$ and $\vec{c^*}$
+    Consider a vector $\vec{Q}$ with modulus $q_{mod}$ pointing in the
+    direction of reciprocal vector $\vec{a^*}$. Then,
+    $q_{mod} = 2 \pi h |\vec{a^*}|$ with $h$ the first Miller index.
+    Similarly for $\vec{Q}$ pointing along $\vec{b^*}$ and $\vec{c^*}$
 
     Parameters
     ----------
@@ -205,14 +206,16 @@ def reciprocal_max_indexes(q_mod, abc_r):
     numpy.ndarray
         Maximum Miller indexes
     """
-    return 1 + int(q_mod / (2 * np.pi * abc_r))
+    np_abc_r = np.asarray(abc_r)  # coerce to numpy array, just in case
+    return 1 + (q_mod / (2 * np.pi * np_abc_r)).astype(int)
 
 
-def reciprocal_moduli(hm, km, lm, m_b=None):
-    """
-    Momentum transfer moduli of a grid of Miller indexes
+def reciprocal_qvectors(hm, km, lm, m_b=None):
+    r"""
+    Momentum transfer vectors for a grid of Miller indexes.
 
-    The extent of the grid is [-h, h] x [-k, k] x [-l, l]
+    The extent of the grid is [-h, h] x [-k, k] x [-l, l]. Q-vectors are
+    represented by their projections on an orthonormal frame of reference.
 
     Parameters
     ----------
@@ -224,77 +227,94 @@ def reciprocal_moduli(hm, km, lm, m_b=None):
         Maximum value of the third Miller index
     m_b: numpy.ndarray
         Matrix where columns are the components of the reciprocal lattice
-        vectors in an orthogonal frame of reference following the
+        vectors in an orthonormal frame of reference following the
         crystallographic convention of an oriented lattice construction. If
         None, we assume the identity matrix.
 
     Returns
     -------
     numpy.ndarray
-
+        shape = (3, 1+2*hm, 1+2*lm, 1+2*lm)
     """
-    na, nb, nc = hm, km, lm
-    moduli = np.zeros((2*na+1, 2*nb+1, 2*nc+1))
-    # TBD this could be achieved with numpy arrays
-    for h in range(-na, 1+na):
-        for k in range(-nb, 1+nb):
-            for l in range(-nc, 1+nc):
-                moduli[h][k][l] = sum(np.square(np.dot(m_b, np.asarray(h, k, l))))
-    return 2 * pi * np.sqrt(moduli)
+    running_indexes = np.mgrid[-hm:1+hm, -km:1+km, -lm:1+lm]
+    return 2 * np.pi * np.tensordot(m_b, running_indexes, 1)
 
 
-def reciprocal_average(q_mod_array, lattice, min_nvec=1, max_nvec=200):
-    """
-    Set of reciprocal lattice vectors with moduli close to q_mod_array.
+def reciprocal_qmoduli(hm, km, lm, m_b=None):
+    r"""
+    Momentum transfer moduli for a grid of Miller indexes.
 
-    For q_mod_array[i], find the reciprocal lattice vectors in the range
-    ( (q_mod_array[i-1] + q_mod_array[i])/2,
-      (q_mod_array[i] + q_mod_array[i+1])/2 )
-    and retain only nvec vectors (randomly selected)
-
-    There may be that there are few or no reciprocal lattice vectors for some
-    q_mod_array[i], specially for low values of the momentum transfer modulus.
-    Thus, we return only those moduli of q_mod_array for which sufficient
-    reciprocal lattice vectors are found
+    The extent of the grid is [-h, h] x [-k, k] x [-l, l].
 
     Parameters
     ----------
-    q_mod_array
-    lattice
-    min_nvec
-    max_nvec
+    hm: int
+        Maximum value of the first Miller index
+    km: int
+        Maximum value of the second Miller index
+    lm: int
+        Maximum value of the third Miller index
+    m_b: numpy.ndarray
+        Matrix where columns are the components of the reciprocal lattice
+        vectors in an orthonormal frame of reference following the
+        crystallographic convention of an oriented lattice construction. If
+        None, we assume the identity matrix.
 
     Returns
     -------
-    (q_mods, q_vecs): tuple
-        q_mods: moduli of q_mod_array for which reciprocal lattice vectors are
-            found.
-        q_vecs: reciprocal lattice vectors for each modulus of q_mods. Thus,
-            len(q_vecs) is len(q_mods)
+    numpy.ndarray
+        shape = (1+2*hm, 1+2*lm, 1+2*lm)
     """
+    return norm(reciprocal_qvectors(hm, km, lm, m_b=m_b), axis=0)
+
+
+def reciprocal_average(q_mod_bins, lattice, max_nvec=200):
+    r"""
+    List of arrays of q-vectors, each array containing q-vectors of moduli
+    within two consecutive bins of `q_mod_bins`
+
+    Parameters
+    ----------
+    q_mod_bins: numpy.ndarray
+        Sorted array of Q moduli representing bin boundaries.
+    lattice: numpy.ndarray
+        Direct lattice parameters (a, b, c, alpha, beta, gamma)
+    max_nvec: int
+        Maximum number of Q vectors to be retained within each bin. Must be
+        even number
+
+    Returns
+    -------
+    q_arrays: list
+        list items are arrays of Q-vectors with len(qvecs) = len(q_mod_bins)-1.
+        qvecs[i] is array of shape (max_nvec, 3) containing Q-vectors with
+        module in between q_mod_bins[i] and q_mod_bins[i+1]
+    """
+    if max_nvec % 2 != 0:
+        raise ValueError('max_nvec needs to be an even number')
+
+    # Find momentum transfer vector and moduli of a reciprocal grid
+    # in fractional coordinates
     r = reciprocal_descriptors(lattice)
+    q_mod_max = np.max(q_mod_bins)
+    abc_r = (r['a_r'], r['b_r'], r['c_r'])  # lattice sizes
+    hm, km, lm = reciprocal_max_indexes(q_mod_max, abc_r)
+    moduli = reciprocal_qmoduli(hm, km, lm, r['m_b']).flatten()
+    qvecs = reciprocal_qvectors(hm, km, lm, r['m_b'])
+    qvecs = qvecs.reshape(3, len(moduli)).transpose()
 
-    # Find momentum transfer moduli for a reciprocal grid in fractional coords
-    q_mod_max = np.max(q_mod_array)
-    abc_r = np.asarray(r['a_r'], r['b_r'], r['c_r'])  # lattice sizes
-    hkl_max = reciprocal_max_indexes(q_mod_max, abc_r)
-    hkl_moduli = reciprocal_moduli(hkl_max, r['m_b'])
+    q_arrays = list()
+    for i in range(len(q_mod_bins) - 1):
+        low_q = q_mod_bins[i]
+        high_q = q_mod_bins[i+1]
+        indexes = np.where((moduli >= low_q) & (moduli < high_q))
+        selected = qvecs[indexes]
+        if len(selected) > max_nvec:
+            np.random.shuffle(selected)
+            selected = selected[0: int(max_nvec/2)]  # shape (max_nvec/2, 3)
+            # For every selected Q-vector, collect its reflection
+            q_arrays.append(np.concatenate((selected, -selected), axis=0))
+        else:
+            q_arrays.append(selected)
+    return q_arrays
 
-    # create lower and upper bin boundaries for the array of momentum transfers
-    i_bins = (q_mod_array[:-1] + q_mod_array[1:]) / 2.  # inner bins
-    l_bins = np.insert(i_bins, 0, 2 * q_mod_array[0] - i_bins[0])  # lower
-    u_bins = np.append(i_bins, 2 * q_mod_array[-1] - i_bins[-1])  # upper
-
-    # Find momentum transfer vectors within each q_mod bin
-    q_mods = list()
-    q_vecs = list()
-    for (lower, upper) in zip(l_bins, u_bins):
-        hkl = np.argwhere((hkl_moduli > lower) & (hkl_moduli < upper))
-        if len(hkl) < min_nvec:
-            continue  # insufficient number of lattice vectors in this bin
-        if len(hkl) > max_nvec:  # excessive number of lattice vectors
-            hkl = np.random.shuffle(hkl)[0: max_nvec]
-        q_mods.append((lower + upper) / 2)
-        q_vecs.append(hkl)
-
-    return np.asarry(q_mods), np.asarray(q_vecs)
