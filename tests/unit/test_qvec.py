@@ -2,7 +2,7 @@ from __future__ import (print_function, absolute_import)
 
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_array_equal
-from math import isclose, sqrt
+from math import sqrt
 import pytest
 
 from nscsim import qvec
