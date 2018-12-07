@@ -38,18 +38,20 @@ def test_si_self_intermediate_spherical():
     q = np.array((0.2, 0.3, 0.4, 0.5))
     tr = diffusive_particles(1, 1.0, 10000)[0]
     out = incoherent.si_self_intermediate_spherical(q, tr, ns=5000, nt=100)
-    time_at_FWHM = np.abs(out.sf - 0.5).argmin(axis=1)
-    assert np.log(2)/(time_at_FWHM * np.square(q)) == approx(0.5, abs=0.1)
+    time_at_fwhm = np.abs(out.sf - 0.5).argmin(axis=1)
+    assert np.log(2)/(time_at_fwhm * np.square(q)) ==\
+        approx(0.5 * np.ones(len(q)), abs=0.1)
 
 
 def test_self_intermediate_spherical():
-    q = (0.2, 0.3, 0.4, 0.5)
+    q = np.array((0.2, 0.3, 0.4, 0.5))
     n_atoms = 100
     tr = diffusive_particles(n_atoms, 1.0, 10000)
     bi = np.ones(n_atoms)
     out = incoherent.self_intermediate_spherical(q, tr, bi, ns=1000, nt=100)
-    time_at_FWHM = np.abs(out.sf - 0.5).argmin(axis=1)
-    assert np.log(2)/(time_at_FWHM * np.square(q)) == approx(0.5, abs=0.1)
+    time_at_fwhm = np.abs(out.sf - 0.5).argmin(axis=1)
+    assert np.log(2)/(time_at_fwhm * np.square(q)) ==\
+        approx(0.5 * np.ones(len(q)), abs=0.1)
 
 
 if __name__ == '__main__':
