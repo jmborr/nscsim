@@ -1,8 +1,8 @@
 from __future__ import (print_function, absolute_import)
 
 import pytest
-from pytest import approx
 import numpy as np
+from numpy.testing import assert_almost_equal
 
 from nscsim.quasielastic import incoherent
 
@@ -39,8 +39,8 @@ def test_si_self_intermediate_spherical():
     tr = diffusive_particles(1, 1.0, 10000)[0]
     out = incoherent.si_self_intermediate_spherical(q, tr, ns=5000, nt=100)
     time_at_fwhm = np.abs(out.sf - 0.5).argmin(axis=1)
-    assert np.log(2)/(time_at_fwhm * np.square(q)) ==\
-        approx(0.5 * np.ones(len(q)), abs=0.1)
+    assert_almost_equal(np.log(2)/(time_at_fwhm * np.square(q)),
+                        0.5 * np.ones(len(q)), decimal=1)
 
 
 def test_self_intermediate_spherical():
@@ -50,8 +50,8 @@ def test_self_intermediate_spherical():
     bi = np.ones(n_atoms)
     out = incoherent.self_intermediate_spherical(q, tr, bi, ns=1000, nt=100)
     time_at_fwhm = np.abs(out.sf - 0.5).argmin(axis=1)
-    assert np.log(2)/(time_at_fwhm * np.square(q)) ==\
-        approx(0.5 * np.ones(len(q)), abs=0.1)
+    assert_almost_equal(np.log(2)/(time_at_fwhm * np.square(q)),
+                        0.5 * np.ones(len(q)), decimal=1)
 
 
 if __name__ == '__main__':
