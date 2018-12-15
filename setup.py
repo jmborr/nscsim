@@ -11,7 +11,7 @@ with open('README.rst') as readme_file:
     readme = readme_file.read()
 
 requirements = [
-    'future', 'numpy', 'scipy', 'six', 'tqdm'
+    'future', 'numpy', 'pathos', 'scipy', 'six', 'tqdm'
     # TODO: put package requirements here
 ]
 
