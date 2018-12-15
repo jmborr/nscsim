@@ -65,4 +65,8 @@ target/
 # Pycharm artifacts
 .idea
 
+# Jupyter notebooks
+.ipynb_checkpoints
+
 *.npz
+junk*

@@ -1,7 +1,9 @@
 from __future__ import (print_function, absolute_import)
 
 import numpy as np
+import multiprocessing
 from tqdm import tqdm as progress_bar
+import pathos
 
 from nscsim.utilities import namedtuplefy
 
@@ -121,7 +123,8 @@ def si_self_intermediate_spherical(q_mod, tr, ns=200, nt=100, dt=1):
 
 
 @namedtuplefy
-def self_intermediate_spherical(q_mod, tr, bi, ns=200, nt=100, dt=1):
+def self_intermediate_spherical(q_mod, tr, bi, ns=200, nt=100, dt=1,
+                                n_cores=None):
     r"""
     Self incoherent structure factor for a set of q-vector moduli,
     spherically averaged in q-vector space and by the sum of the
@@ -144,6 +147,8 @@ def self_intermediate_spherical(q_mod, tr, bi, ns=200, nt=100, dt=1):
         Number of t's, i.e, number time lapses
     dt: int
         Spacing between consecutive time lapses, in units of number of frames
+    n_cores: int
+        Number of CPU cores to use. `None` means use all cores
 
     Returns
     -------
@@ -154,8 +159,18 @@ def self_intermediate_spherical(q_mod, tr, bi, ns=200, nt=100, dt=1):
             is calculated
     """
     sf = np.zeros((len(q_mod), nt))
-    kw = dict(ns=ns, nt=nt, dt=dt)
-    for i, si_tr in enumerate(tr):
-        sf += bi[i]**2 * si_self_intermediate_spherical(q_mod, si_tr, **kw).sf
-    sf = (sf / sum(bi * bi))
-    return dict(sf=sf, t=dt * np.arange(nt))
+
+    def serial_worker(atomic_tr):
+        return si_self_intermediate_spherical(q_mod, atomic_tr, ns=ns, nt=nt,
+                                              dt=dt).sf
+    if n_cores == 1:
+        for i, atomic_tr in enumerate(tr):
+            sf += bi[i] ** 2 * serial_worker(atomic_tr)
+    else:
+        if n_cores is None:
+            n_cores = multiprocessing.cpu_count() - 1
+        pool = pathos.pools.ProcessPool(ncpus=n_cores)
+        for i, _sf in enumerate(pool.map(serial_worker, tr)):
+            sf += bi[i] ** 2 * _sf
+        pool.terminate()
+    return dict(sf=sf / sum(bi * bi), t=dt * np.arange(nt))
