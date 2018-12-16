@@ -1,5 +1,6 @@
 future
 numpy
+pathos
 scipy
 six
 tqdm
