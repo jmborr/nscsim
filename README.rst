@@ -17,5 +17,10 @@ nsc
    :alt: Join the chat at https://gitter.im/nsc/Lobby
    :target: https://gitter.im/nsc/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
+.. image:: https://mybinder.org/badge_logo.svg
+   :alt: Run notebooks in https://mybinder.org
+   :target: https://mybinder.org/v2/gh/jmborr/nscsim.git/master
+
+
 Analysis of intrinsically disordered proteins by comparing MD simulations to
 Small Angle Scattering experiments.
