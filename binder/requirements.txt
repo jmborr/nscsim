@@ -1,0 +1,9 @@
+future
+cython
+numpy
+scipy
+matplotlib
+pathos
+six
+tqdm
+MDAnalysis
