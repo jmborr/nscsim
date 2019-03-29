@@ -7,3 +7,4 @@ pathos
 six
 tqdm
 MDAnalysis
+periodictable
