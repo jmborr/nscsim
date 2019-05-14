@@ -61,9 +61,7 @@ def moduli_linscale(q_mod_min, q_mod_max=None, q_mod_delta=None,
             # q_mods from triad (q_mod_min, q_mod_max, q_mod_delta)
             q_mods = np.arange(q_mod_min, q_mod_max, q_mod_delta)
         elif n_q_mod is not None:
-            # q_mods from triad (q_mod_min, q_mod_max, n_q_mod)
-            q_mod_delta = (q_mod_max - q_mod_min) / n_q_mod
-            q_mods = np.arange(q_mod_min, q_mod_max, q_mod_delta)
+            q_mods = np.linspace(q_mod_min, q_mod_max, num=n_q_mod, endpoint=True)
     elif q_mod_delta is not None and n_q_mod is not None:
         # q_mods from triad (q_mod_min, q_mod_delta, n_q_mod)
         q_mods = q_mod_min + q_mod_delta * np.arange(n_q_mod)
