@@ -35,9 +35,9 @@ def moduli_linscale(q_mod_min, q_mod_max=None, q_mod_delta=None,
     r"""
     An array of q vector moduli (q_mods) is generated depending on the passed
     arguments. These are the options:
-    1. (q_mod_min, q_mod_max, q_mod_delta) generates q_mods
-    2. (q_mod_min, q_mod_max, n_q_mod) generates q_mods
-    3. (q_mod_min, q_mod_delta, n_q_mod) generates q_mods
+    1. (q_mod_min, q_mod_max, q_mod_delta)
+    2. (q_mod_min, q_mod_max, n_q_mod) with guaranteed q_mod_min and q_mod_max
+    3. (q_mod_min, q_mod_delta, n_q_mod)
 
     Parameters
     ----------
