@@ -35,9 +35,9 @@ def moduli_linscale(q_mod_min, q_mod_max=None, q_mod_delta=None,
     r"""
     An array of q vector moduli (q_mods) is generated depending on the passed
     arguments. These are the options:
-    1. (q_mod_min, q_mod_max, q_mod_delta) generates q_mods
-    2. (q_mod_min, q_mod_max, n_q_mod) generates q_mods
-    3. (q_mod_min, q_mod_delta, n_q_mod) generates q_mods
+    1. (q_mod_min, q_mod_max, q_mod_delta)
+    2. (q_mod_min, q_mod_max, n_q_mod) with guaranteed q_mod_min and q_mod_max
+    3. (q_mod_min, q_mod_delta, n_q_mod)
 
     Parameters
     ----------
@@ -61,9 +61,8 @@ def moduli_linscale(q_mod_min, q_mod_max=None, q_mod_delta=None,
             # q_mods from triad (q_mod_min, q_mod_max, q_mod_delta)
             q_mods = np.arange(q_mod_min, q_mod_max, q_mod_delta)
         elif n_q_mod is not None:
-            # q_mods from triad (q_mod_min, q_mod_max, n_q_mod)
-            q_mod_delta = (q_mod_max - q_mod_min) / n_q_mod
-            q_mods = np.arange(q_mod_min, q_mod_max, q_mod_delta)
+            q_mods = np.linspace(q_mod_min, q_mod_max, num=n_q_mod,
+                                 endpoint=True)
     elif q_mod_delta is not None and n_q_mod is not None:
         # q_mods from triad (q_mod_min, q_mod_delta, n_q_mod)
         q_mods = q_mod_min + q_mod_delta * np.arange(n_q_mod)

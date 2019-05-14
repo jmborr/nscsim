@@ -1,10 +1,25 @@
 from __future__ import (absolute_import, division, print_function)
 
+import logging
 import functools
 import numpy as np
 from collections import namedtuple, Mapping
 import multiprocessing
 import ctypes
+import p_tqdm
+
+
+glog = logging.getLogger('nscsim')
+glog.addHandler(logging.StreamHandler())
+glog.setLevel(logging.INFO)
+
+
+def serial_bar(iterable):
+    return p_tqdm.tqdm(iterable, miniters=int(len(iterable/100)))
+
+
+def parallel_bar(iterable):
+    return p_tqdm.p_map(iterable, miniters=int(len(iterable/100)))
 
 
 def namedtuplefy(func):

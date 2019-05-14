@@ -4,7 +4,6 @@ import numpy as np
 from numpy.testing import assert_almost_equal, assert_array_equal
 from math import sqrt
 import pytest
-
 from nscsim import qvec
 
 
@@ -16,9 +15,10 @@ def test_unit_sphere_surf():
 
 def test_moduli_linscale():
     for qs in (qvec.moduli_linscale(0, q_mod_max=1.0, q_mod_delta=0.1),
-               qvec.moduli_linscale(0, q_mod_max=1.0, n_q_mod=10),
                qvec.moduli_linscale(0, q_mod_delta=0.1, n_q_mod=10)):
         assert np.array_equal(qs, np.arange(0, 1.0, 0.1))
+    qs = qvec.moduli_linscale(0, q_mod_max=1.0, n_q_mod=10)
+    assert_almost_equal(qs, np.linspace(0, 1, 10), decimal=2)
 
 
 def test_moduli_logscale():

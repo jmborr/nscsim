@@ -3,4 +3,5 @@ numpy
 pathos
 scipy
 six
-tqdm
+matplotlib
+p_tqdm
