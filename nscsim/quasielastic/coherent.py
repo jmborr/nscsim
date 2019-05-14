@@ -1,11 +1,10 @@
 from __future__ import (print_function, absolute_import)
 
 import numpy as np
-from nscsim.utilities import (namedtuplefy, serial_bar, parallel_bar, glog)
+from nscsim.utilities import (serial_bar, parallel_bar, glog)
 from nscsim import qvec
 import multiprocessing
 import pathos
-from scipy.spatial import distance_matrix
 
 
 def intermediate_amplitudes(tr, q, bc, n_cores=None):
