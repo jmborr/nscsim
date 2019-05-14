@@ -17,7 +17,7 @@ def single_curve(x, y, xlabel='x', ylabel='y', xscale='linear',
     """
     if plotkwargs is None:
         plotkwargs = dict()
-    fig, ax = plt.subplots(1,1)
+    fig, ax = plt.subplots(1, 1)
     ax.plot(x, y, **plotkwargs)
     ax.set_xlabel(xlabel, size=25)
     ax.set_ylabel(ylabel, size=25)
