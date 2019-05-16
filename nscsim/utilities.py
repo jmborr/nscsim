@@ -4,22 +4,14 @@ import logging
 import functools
 import numpy as np
 from collections import namedtuple, Mapping
+import pathos
 import multiprocessing
 import ctypes
-import p_tqdm
 
 
 glog = logging.getLogger('nscsim')
 glog.addHandler(logging.StreamHandler())
 glog.setLevel(logging.INFO)
-
-
-def serial_bar(iterable):
-    return p_tqdm.tqdm(iterable, miniters=int(len(iterable/100)))
-
-
-def parallel_bar(iterable):
-    return p_tqdm.p_map(iterable, miniters=int(len(iterable/100)))
 
 
 def namedtuplefy(func):
@@ -53,7 +45,7 @@ def namedtuplefy(func):
 
 def shared_array(from_array=None, shape=None, c_type='double'):
     r"""
-    Array shared by all CPU's
+    Read-only array shared by all CPU's
 
     Parameters
     ----------
@@ -70,15 +62,26 @@ def shared_array(from_array=None, shape=None, c_type='double'):
     -------
     shared numpy.ndarray
     """
-    dtype_to_ctype = {'float64': 'double'}  # translator from numpy to ctype
+    dtype_to_ctype = {'float64': 'double', 'float32': 'float'}
     if from_array is not None:
         shape = from_array.shape
         dt = str(from_array.dtype)
         c_type = dtype_to_ctype.get(dt, dt)
     ctypes_class = getattr(ctypes, 'c_' + c_type)
-    _array_base = multiprocessing.Array(ctypes_class, int(np.prod(shape)))
-    _array = np.ctypeslib.as_array(_array_base.get_obj())
+    _array_base = multiprocessing.Array(ctypes_class,
+                                        int(np.prod(shape)),
+                                        lock=False)
+    _array = np.ctypeslib.as_array(_array_base)
     _array = _array.reshape(shape)
     if from_array is not None:
         _array[:] = from_array
     return _array
+
+
+def map_parallel(worker, iterator, ncpus):
+    pool = pathos.pools.ProcessPool(ncpus=ncpus)
+    try:
+        work = pool.map(worker, iterator)
+    finally:
+        pool.terminate()
+    return work
