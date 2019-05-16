@@ -1,10 +1,9 @@
 from __future__ import (print_function, absolute_import)
 
 import numpy as np
-from nscsim.utilities import (serial_bar, parallel_bar, glog)
+from nscsim.utilities import (glog, map_parallel, shared_array)
 from nscsim import qvec
-import multiprocessing
-import pathos
+from tqdm import tqdm
 
 
 def intermediate_amplitudes(tr, q, bc, n_cores=None):
@@ -45,16 +44,9 @@ def intermediate_amplitudes(tr, q, bc, n_cores=None):
         return np.tensordot(bc, exponentials, axes=1)  # shape=(#q's,)
 
     glog.info('\nCalculating coherent amplitudes for one set of q vectors\n')
-    if n_cores is None:
-        n_cores = max(1, multiprocessing.cpu_count() - 1)
-    if n_cores == 1:
-        amps = np.asarray([serial_worker(f) for f in serial_bar(tr)])
-        return amps
-    else:
-        pool = pathos.pools.ProcessPool(ncpus=n_cores)
-        amps = np.asarray(parallel_bar(serial_worker, tr))
-        pool.terminate()
-        return amps
+    amps = np.array(map_parallel(serial_worker, shared_array(tr), n_cores))
+
+    return amps
 
 
 def times(tr):
@@ -166,6 +158,6 @@ def intermediate_spherical(tr, q_mod, b_c, n_cores=1):
     """
     q_sets = qvec.sphere_average(q_mod)
     glog.info('\nCalculating coherent scattering for a set of q-moduli\n')
-    sf = [np.real(intermediate(tr, q_set, b_c, n_cores=1))
-          for q_set in serial_bar(q_sets)]
+    sf = [np.real(intermediate(tr, q_set, b_c, n_cores=n_cores))
+          for q_set in tqdm(q_sets)]
     return np.asarray(sf)
