@@ -1,7 +1,7 @@
 from __future__ import (print_function, absolute_import)
 
 import numpy as np
-from nscsim.utilities import serial_bar
+from tqdm import tqdm
 
 
 def vector_structure_factor(q, tr, b_c):
@@ -68,4 +68,4 @@ def structure_factor(q, tr, b_c):
         return vector_structure_factor(q, tr, b_c)
     elif q.ndim == 3:
         return np.asarray([np.mean(vector_structure_factor(v, tr, b_c))
-                           for v in serial_bar(q)])
+                           for v in tqdm(q)])
