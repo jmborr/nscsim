@@ -4,4 +4,4 @@ pathos
 scipy
 six
 matplotlib
-p_tqdm
+tqdm
