@@ -78,10 +78,11 @@ def shared_array(from_array=None, shape=None, c_type='double'):
     return _array
 
 
-def map_parallel(worker, iterator, ncpus):
+def map_parallel(worker, iterator, ncpus, close_pool=True):
     pool = pathos.pools.ProcessPool(ncpus=ncpus)
     try:
         work = pool.map(worker, iterator)
     finally:
-        pool.terminate()
+        if close_pool is True:
+            pool.terminate()
     return work
