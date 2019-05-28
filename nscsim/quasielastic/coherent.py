@@ -44,7 +44,8 @@ def intermediate_amplitudes(tr, q, bc, n_cores=None):
         return np.tensordot(bc, exponentials, axes=1)  # shape=(#q's,)
 
     glog.info('\nCalculating coherent amplitudes for one set of q vectors\n')
-    amps = np.array(map_parallel(serial_worker, shared_array(tr), n_cores))
+    #TODO: close_pool=False is a temporary fix. See issue #31
+    amps = np.array(map_parallel(serial_worker, shared_array(tr), n_cores, close_pool=False))
 
     return amps
 
