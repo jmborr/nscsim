@@ -50,20 +50,25 @@ def intermediate_vector_set(tr, q, s_inc, n_cores=None):
         - calculate a_i(\vec{q}, t)
         - return self-correlation of a_i to obtain A_i(\vec{q}, t)
         """
-        pass
+        ai = np.exp(-1j * np.tensordot(q, atomic_tr, axes=(1, 1)))
+        return atomic_s_inc * np.correlate(ai, ai, 'full')
+
 
     glog.info('\nCalculating incoherent intensities for one set of q vectors\n')
-    #TODO: close_pool=False is a temporary fix. See issue #31
+    # TODO: close_pool=False is a temporary fix. See issue #31
     #
     # Problem: variable amps with shape=(#atoms, #q, 2*#frame-1)
     #          is too big to fit in memory. We have to add results
     #          of map_parallel to a variable sum_amps as soon as
     #          each core terminates serial_worker.
     #
-    amps = np.array(map_parallel(serial_worker, shared_array(tr), s_inc,
-                                 n_cores, close_pool=False))
-
-    return np.sum(amps, axis=0)  # shape = (#q's, 2 * #frames - 1)
+    return np.sum(map_parallel(
+        serial_worker,
+        shared_array(tr),
+        s_inc,
+        n_cores,
+        close_pool=False
+    ))  # shape = (#q's, 2 * #frames - 1)
 
 
 def intermediate(tr, q, s_inc, n_cores=None,
