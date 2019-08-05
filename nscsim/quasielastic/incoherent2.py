@@ -54,8 +54,10 @@ def intermediate_vector_set(tr, q, s_inc, n_cores=None):
         - return self-correlation of a_i to obtain A_i(\vec{q}, t)
         """
         ai = np.exp(-1j * np.tensordot(q, atomic_tr, axes=(1, 1)))
+        w = np.arange(1, 1 + len(ai[0]))
+        w = 1.0 / np.concatenate((w, w[::-1][1:]))
         result = np.apply_along_axis(
-            lambda x: atomic_s_inc*np.correlate(x, x, "full"),
+            lambda x: w * atomic_s_inc**2 * np.correlate(x, x, "full"),
             1,
             ai,
         )
@@ -80,7 +82,7 @@ def intermediate_vector_set(tr, q, s_inc, n_cores=None):
     finally:
         pool.close()
         pool.join()
-    return result
+    return result/np.sum(s_inc*s_inc)
 
 
 def intermediate(
