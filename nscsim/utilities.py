@@ -81,7 +81,7 @@ def shared_array(from_array=None, shape=None, c_type='double'):
 def map_parallel(worker, iterator, ncpus, close_pool=True):
     pool = pathos.pools.ProcessPool(ncpus=ncpus)
     try:
-        work = pool.imap(worker, iterator)
+        work = pool.map(worker, iterator)
     finally:
         if close_pool is True:
             pool.terminate()

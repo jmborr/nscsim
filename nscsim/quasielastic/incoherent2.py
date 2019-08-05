@@ -1,7 +1,10 @@
 import numpy as np
-from nscsim.utilities import (glog, map_parallel, shared_array)
+import functools
+from nscsim.utilities import glog, shared_array
 from nscsim import qvec
 from tqdm import tqdm
+import os
+import pathos
 
 
 def intermediate_vector_set(tr, q, s_inc, n_cores=None):
@@ -51,10 +54,14 @@ def intermediate_vector_set(tr, q, s_inc, n_cores=None):
         - return self-correlation of a_i to obtain A_i(\vec{q}, t)
         """
         ai = np.exp(-1j * np.tensordot(q, atomic_tr, axes=(1, 1)))
-        return atomic_s_inc * np.correlate(ai, ai, 'full')
+        result = np.apply_along_axis(
+            lambda x: atomic_s_inc*np.correlate(x, x, "full"),
+            1,
+            ai,
+        )
+        return result
 
-
-    glog.info('\nCalculating incoherent intensities for one set of q vectors\n')
+    glog.info("\nCalculating incoherent intensities for one set of q vectors\n")
     # TODO: close_pool=False is a temporary fix. See issue #31
     #
     # Problem: variable amps with shape=(#atoms, #q, 2*#frame-1)
@@ -62,17 +69,23 @@ def intermediate_vector_set(tr, q, s_inc, n_cores=None):
     #          of map_parallel to a variable sum_amps as soon as
     #          each core terminates serial_worker.
     #
-    return np.sum(map_parallel(
-        serial_worker,
-        shared_array(tr),
-        s_inc,
-        n_cores,
-        close_pool=False
-    ))  # shape = (#q's, 2 * #frames - 1)
+    pool = pathos.pools.ProcessPool(nodes=n_cores)
+    glog.info(f"\nUsing pool of {pool.nodes} cpus.\n")
+    try:
+        pool.restart(force=True)
+        result = functools.reduce(
+            np.add,
+            pool.uimap(serial_worker, shared_array(tr), s_inc),
+        )  # shape = (#q's, 2*#frames - 1)
+    finally:
+        pool.close()
+        pool.join()
+    return result
 
 
-def intermediate(tr, q, s_inc, n_cores=None,
-                 averaging=(np.average, None, dict(axis=0))):
+def intermediate(
+    tr, q, s_inc, n_cores=None, averaging=(np.average, None, dict(axis=0))
+):
     r"""
     Incoherent scattering averaged over scattering for a collection of q-vectors
 
@@ -105,7 +118,7 @@ def intermediate(tr, q, s_inc, n_cores=None,
     return averaging[0](sf, *av_args, **averaging[2])
 
 
-def intermediate_spherical(tr, q_mod, s_inc, n_cores=1):
+def intermediate_spherical(tr, q_mod, s_inc, n_cores=None):
     r"""
     Coherent scattering averaged over scattering for a collection of q-vectors
 
@@ -126,7 +139,9 @@ def intermediate_spherical(tr, q_mod, s_inc, n_cores=1):
         shape = (#frames)
     """
     q_sets = qvec.sphere_average(q_mod)
-    glog.info('\nCalculating coherent scattering for a set of q-moduli\n')
-    sf = [np.real(intermediate(tr, q_set, s_inc, n_cores=n_cores))
-          for q_set in tqdm(q_sets)]
+    glog.info("\nCalculating coherent scattering for a set of q-moduli\n")
+    sf = [
+        np.real(intermediate(tr, q_set, s_inc, n_cores=n_cores))
+        for q_set in tqdm(q_sets)
+    ]
     return np.asarray(sf)
