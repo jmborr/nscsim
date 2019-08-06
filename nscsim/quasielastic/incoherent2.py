@@ -1,10 +1,13 @@
 import numpy as np
 import functools
+import dill
+import multiprocessing
 from nscsim.utilities import glog, shared_array
 from nscsim import qvec
 from tqdm import tqdm
 import os
 import pathos
+import itertools
 
 
 def intermediate_vector_set(tr, q, s_inc, n_cores=None):
@@ -61,23 +64,21 @@ def intermediate_vector_set(tr, q, s_inc, n_cores=None):
             1,
             ai,
         )
-        return result
+        return result[:, len(result[0])//2:]
 
     glog.info("\nCalculating incoherent intensities for one set of q vectors\n")
-    # TODO: close_pool=False is a temporary fix. See issue #31
-    #
-    # Problem: variable amps with shape=(#atoms, #q, 2*#frame-1)
-    #          is too big to fit in memory. We have to add results
-    #          of map_parallel to a variable sum_amps as soon as
-    #          each core terminates serial_worker.
-    #
     pool = pathos.pools.ProcessPool(nodes=n_cores)
-    glog.info(f"\nUsing pool of {pool.nodes} cpus.\n")
+    glog.info(f"\nUsing pool of {n_cores} cpus.\n")
     try:
         pool.restart(force=True)
         result = functools.reduce(
             np.add,
-            pool.uimap(serial_worker, shared_array(tr), s_inc),
+            pool.uimap(
+                serial_worker,
+                # shared_array(tr),
+                tr,
+                s_inc,
+                ),
         )  # shape = (#q's, 2*#frames - 1)
     finally:
         pool.close()
