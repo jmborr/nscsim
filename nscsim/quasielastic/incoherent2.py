@@ -75,7 +75,6 @@ def intermediate_vector_set(tr, q, s_inc, n_cores=None):
             np.add,
             pool.uimap(
                 serial_worker,
-                # shared_array(tr),
                 tr,
                 s_inc,
                 ),
