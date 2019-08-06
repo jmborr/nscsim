@@ -39,9 +39,12 @@ def test_intermediate_spherical():
     n_atoms = 100
     tr = diffusive_particles(n_atoms, 1.0, 1000)
     bi = np.ones(n_atoms)
+    seed = np.random.randint(200)
+    np.random.seed(seed)
     serial = incoherent2.intermediate_spherical(tr, q, bi, n_cores=1)
+    np.random.seed(seed)
     parall = incoherent2.intermediate_spherical(tr, q, bi, n_cores=2)
-    assert_almost_equal(serial, parall, decimal=2)
+    assert_almost_equal(serial, parall, decimal=4)
     time_at_fwhm = np.abs(parall - 0.5).argmin(axis=1)
     assert_almost_equal(np.log(2)/(time_at_fwhm * np.square(q)),
                         0.5 * np.ones(len(q)), decimal=1)
