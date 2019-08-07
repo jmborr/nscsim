@@ -66,9 +66,9 @@ def intermediate_vector_set(tr, q, s_inc, n_cores=None):
         )
         return result[:, len(result[0])//2:]
 
-    glog.info("\nCalculating incoherent intensities for one set of q vectors\n")
+    glog.info("\nCalculating incoherent intensities for a set of q vectors\n")
     pool = pathos.pools.ProcessPool(nodes=n_cores)
-    glog.info(f"\nUsing pool of {n_cores} cpus.\n")
+    glog.info("\nUsing pool of {} cpus.\n".format(n_cores))
     try:
         pool.restart(force=True)
         result = functools.reduce(
