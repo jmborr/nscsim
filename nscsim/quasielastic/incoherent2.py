@@ -1,13 +1,9 @@
 import numpy as np
 import functools
-import dill
-import multiprocessing
-from nscsim.utilities import glog, shared_array
+from nscsim.utilities import glog
 from nscsim import qvec
 from tqdm import tqdm
-import os
 import pathos
-import itertools
 
 
 def intermediate_vector_set(tr, q, s_inc, n_cores=None):
@@ -18,7 +14,7 @@ def intermediate_vector_set(tr, q, s_inc, n_cores=None):
     The intensities math:`A_i` are self-correlations of atomic
     amplitudes. The amplitudes math:`a_i` are complex numbers.
     math:`a_i(\vec{q}, t) = e^{-i\vec{q}\vec(r)_i(t)}
-    math: `A_i(\vec{q}, t) = si * <a_i^*(\vec{q}, t_0) a_i^*(\vec{q}, t_0+t)>_t_0`
+    math:`A_i(\vec{q}, t) = si*<a_i^*(\vec{q}, t_0)a_i^*(\vec{q}, t_0+t)>_t_0`
 
     Parameters
     ----------
@@ -89,7 +85,7 @@ def intermediate(
     tr, q, s_inc, n_cores=None, averaging=(np.average, None, dict(axis=0))
 ):
     r"""
-    Incoherent scattering averaged over scattering for a collection of q-vectors
+    Incoherent scattering averaged over a collection of q-vectors
 
     Parameters
     ----------
