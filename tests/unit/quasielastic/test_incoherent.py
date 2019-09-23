@@ -34,26 +34,18 @@ def diffusive_particles(n_atoms, jump, duration):
     return shared_array(from_array=tr)
 
 
-def test_si_self_intermediate_spherical():
-    q = np.array((0.2, 0.3, 0.4, 0.5))
-    tr = diffusive_particles(1, 1.0, 10000)[0]
-    out = incoherent.si_self_intermediate_spherical(q, tr, ns=5000, nt=100)
-    time_at_fwhm = np.abs(out.sf - 0.5).argmin(axis=1)
-    assert_almost_equal(np.log(2)/(time_at_fwhm * np.square(q)),
-                        0.5 * np.ones(len(q)), decimal=1)
-
-
-def test_self_intermediate_spherical():
+def test_intermediate_spherical():
     q = np.array((0.2, 0.3, 0.4, 0.5))
     n_atoms = 100
     tr = diffusive_particles(n_atoms, 1.0, 1000)
     bi = np.ones(n_atoms)
-    serial = incoherent.self_intermediate_spherical(q, tr, bi, ns=1000, nt=100,
-                                                    n_cores=1)
-    parall = incoherent.self_intermediate_spherical(q, tr, bi, ns=1000, nt=100,
-                                                    n_cores=2)
-    assert_almost_equal(serial.sf, parall.sf, decimal=3)
-    time_at_fwhm = np.abs(parall.sf - 0.5).argmin(axis=1)
+    seed = np.random.randint(200)
+    np.random.seed(seed)
+    serial = incoherent.intermediate_spherical(tr, q, bi, n_cores=1)
+    np.random.seed(seed)
+    parall = incoherent.intermediate_spherical(tr, q, bi, n_cores=2)
+    assert_almost_equal(serial, parall, decimal=4)
+    time_at_fwhm = np.abs(parall - 0.5).argmin(axis=1)
     assert_almost_equal(np.log(2)/(time_at_fwhm * np.square(q)),
                         0.5 * np.ones(len(q)), decimal=1)
 

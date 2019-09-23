@@ -1,176 +1,145 @@
-from __future__ import (print_function, absolute_import)
-
 import numpy as np
-import multiprocessing
-from tqdm import tqdm as progress_bar
+import functools
+from nscsim.utilities import glog
+from nscsim import qvec
+from tqdm import tqdm
 import pathos
 
-from nscsim.utilities import namedtuplefy
 
-
-def si_vector_self_intermediate(q, tr, ns=200, nt=100, dt=1):
+def intermediate_vector_set(tr, q, s_inc, n_cores=None):
     r"""
-    Single atoms self incoherent structure factor for each vector in
-    a set of q-vectors
+    Incoherent scattering for a collection of vectors.
+
+    We sum the intensities math:`A_i` derived for each atom math:`i`.
+    The intensities math:`A_i` are self-correlations of atomic
+    amplitudes. The amplitudes math:`a_i` are complex numbers.
+    math:`a_i(\vec{q}, t) = e^{-i\vec{q}\vec(r)_i(t)}
+    math:`A_i(\vec{q}, t) = si*<a_i^*(\vec{q}, t_0)a_i^*(\vec{q}, t_0+t)>_t_0`
 
     Parameters
     ----------
+    tr: numpy.ndarrary
+        Atomic trajectory, shape=(#atoms, #frames, 3)
     q: numpy.ndarray
-        q vectors shape=(#vectors, 3) for a set of q-vectors or
-        shape=(#sets, #vectors, 3) for a list of sets of q-vectors
-    tr: numpy.ndarray
-        atomic trajectory for one atom, shape=(#frames, 3)
-    ns: int
-        Number of t0's for a given t
-    nt: int
-        Number of t's (number time lapses)
-    dt: int
-        Spacing between consecutive t's, in number of frames
-
-    Returns
-    -------
-    numpy.ndarray
-        array of shape=(#vectors) and the structure factor is normalized
-        by the number of frames
-    """
-    pass
-
-
-def si_self_intermediate_si(q, tr, ns=200, nt=100, dt=1):
-    r"""
-    Single atom self incoherent structure factor for each vector in a set
-    of q-vectors, or for each set average in a list of sets of q-vectors.
-
-    Parameters
-    ----------
-    q: numpy.ndarray
-        q vectors shape=(#vectors, 3) for a set of q-vectors or
-        shape=(#sets, #vectors, 3) for a list of sets of q-vectors
-    tr: numpy.ndarray
-        atomic trajectory for one atom, shape=(#frames, 3)
-    ns: int
-        Number of t0's for a given t
-    nt: int
-        Number of t's (number time lapses)
-    dt: int
-        Spacing between consecutive t's, in number of frames
-
-    Returns
-    -------
-    numpy.ndarray
-        If q.shape=(#vectors, 3), returns shape=(#vectors) and the structure
-        factor is normalized by the number of frames and the sum of the
-        squares of scattering lengths. If q.shape=(#sets, #vectors, 3),
-        returns shape=(#sets) and the structure factor is normalized by
-        the number of vectors in each set and the number of frames
-    """
-    kw = dict(ns=ns, nt=nt, dt=dt)
-    if q.ndim == 2:
-        return si_vector_self_intermediate(q, tr, **kw)
-    elif q.ndim == 3:
-        return np.asarray([np.mean(si_vector_self_intermediate(v, tr, **kw))
-                           for v in progress_bar(q)])
-
-
-@namedtuplefy
-def si_self_intermediate_spherical(q_mod, tr, ns=200, nt=100, dt=1):
-    r"""
-    Single atom self incoherent structure factor for a set of q-vector moduli,
-    spherically averaged in q-vector space
-
-    The analytical spherical average is carried out.
-
-    Parameters
-    ----------
-    q_mod: numpy.ndarray
-        Array of q-vector moduli
-    tr: numpy.ndarray
-        atomic trajectory for one atom, shape=(#frames, 3)
-    ns: int
-        Number of t0's for a given time lapse `t`, i.e., number of
-        sampling starting times.
-    nt: int
-        Number of t's, i.e, number time lapses
-    dt: int
-        Spacing between consecutive time lapses, in units of number of frames
-
-    Returns
-    -------
-    namedtuple
-        Fields of the namedtuple
-        sf: numpy.ndarray, structure factor of shape (q_mod.shape, nt)
-        t: numpy.ndarray, list of time lapses where the structure factor
-            is calculated
-    """
-    co = 1e-05  # avoid later dividing by zero
-    n_q = len(q_mod)
-    nfr = len(tr)
-
-    it = 0  # current number of evaluated time lapses
-    t = 0  # first time lapse is no lapse
-    sf = np.zeros((nt, n_q))  # shape is (nt, n_q)
-    ts = []
-    while it < nt:  # cycle over all t's (+1.0 for t=0)
-        dt0 = max(1, int((nfr - t) / ns))  # separation between t0's
-        t0s = np.arange(1, nfr - t, dt0)  # from 1 to nfr-t every delta
-        dij = np.linalg.norm(tr[t0s] - tr[t0s + t], axis=1)  # distances
-        phase = co + np.outer(q_mod, dij)
-        sf[it] = (np.sin(phase) / phase).mean(axis=1)
-        ts.append(t)
-        it += 1
-        t += dt
-    return dict(sf=sf.transpose(), t=np.asarray(ts))
-
-
-@namedtuplefy
-def self_intermediate_spherical(q_mod, tr, bi, ns=200, nt=100, dt=1,
-                                n_cores=None):
-    r"""
-    Self incoherent structure factor for a set of q-vector moduli,
-    spherically averaged in q-vector space and by the sum of the
-    squares of the scattering lengths
-
-    The analytical spherical average is carried out.
-
-    Parameters
-    ----------
-    q_mod: numpy.ndarray
-        Array of q-vector moduli
-    tr: numpy.ndarray
-        atomic trajectory for one atom, shape=(#atoms, #frames, 3)
-    bi: numpy.ndarray
-        incoherent scattering lengths
-    ns: int
-        Number of t0's for a given time lapse `t`, i.e., number of
-        sampling starting times.
-    nt: int
-        Number of t's, i.e, number time lapses
-    dt: int
-        Spacing between consecutive time lapses, in units of number of frames
+        Array of q-vectors shape=(#vectors, 3)
+    s_inc: numpy.ndarray
+        Incoherent scattering cross-section, shape=(#atoms, 1)
     n_cores: int
-        Number of CPU cores to use. `None` means use all cores
+        Number of CPU's to use. All cores minus 1, or 1 if only 1 core
 
     Returns
     -------
-    namedtuple
-        Fields of the namedtuple
-        sf: numpy.ndarray, structure factor of shape (q_mod.shape, nt)
-        t: numpy.ndarray, list of time lapses where the structure factor
-            is calculated
+    np.ndarray
+        Scattering atomic intensities shape=(#q's, 2 * #frames - 1)
     """
-    sf = np.zeros((len(q_mod), nt))
 
-    def serial_worker(atomic_tr):
-        return si_self_intermediate_spherical(q_mod, atomic_tr, ns=ns, nt=nt,
-                                              dt=dt).sf
-    if n_cores == 1:
-        for i, atomic_tr in enumerate(tr):
-            sf += bi[i] ** 2 * serial_worker(atomic_tr)
-    else:
-        if n_cores is None:
-            n_cores = multiprocessing.cpu_count() - 1
-        pool = pathos.pools.ProcessPool(ncpus=n_cores)
-        for i, _sf in enumerate(pool.map(serial_worker, tr)):
-            sf += bi[i] ** 2 * _sf
-        pool.terminate()
-    return dict(sf=sf / sum(bi * bi), t=dt * np.arange(nt))
+    def serial_worker(atomic_tr, atomic_s_inc):
+        r"""
+        Calculate intensities for a single atom
+
+        Parameters
+        ----------
+        atomic_tr: numpy.ndarray
+            shape = (#frames, 3) trajectory for one atom
+        atomic_s_inc: float
+            Incoherent scattering cross-section for one atom
+        Returns
+        -------
+        numpy.ndarray
+            shape = (#q's, 2 * #frames - 1)
+        """
+        r"""Pseudocode:
+        - calculate a_i(\vec{q}, t)
+        - return self-correlation of a_i to obtain A_i(\vec{q}, t)
+        """
+        ai = np.exp(-1j * np.tensordot(q, atomic_tr, axes=(1, 1)))
+        w = np.arange(1, 1 + len(ai[0]))
+        w = 1.0 / np.concatenate((w, w[::-1][1:]))
+        result = np.apply_along_axis(
+            lambda x: w * atomic_s_inc**2 * np.correlate(x, x, "full"),
+            1,
+            ai,
+        )
+        return result[:, len(result[0])//2:]
+
+    glog.info("\nCalculating incoherent intensities for a set of q vectors\n")
+    pool = pathos.pools.ProcessPool(nodes=n_cores)
+    glog.info("\nUsing pool of {} cpus.\n".format(n_cores))
+    try:
+        pool.restart(force=True)
+        result = functools.reduce(
+            np.add,
+            pool.uimap(
+                serial_worker,
+                tr,
+                s_inc,
+                ),
+        )  # shape = (#q's, 2*#frames - 1)
+    finally:
+        pool.close()
+        pool.join()
+    return result/np.sum(s_inc*s_inc)
+
+
+def intermediate(
+    tr, q, s_inc, n_cores=None, averaging=(np.average, None, dict(axis=0))
+):
+    r"""
+    Incoherent scattering averaged over a collection of q-vectors
+
+    Parameters
+    ----------
+    tr: numpy.ndarray
+        Atomic trajectory, shape=(#atoms, #frames, 3)
+    q: numpy.ndarray
+        Array of q-vectors shape=(#vectors, 3)
+    s_inc: numpy.ndarray
+        Incoherent scattering cross-section, shape=(#atoms, 1)
+    n_cores: int
+        Number of CPU's to use. All cores minus 1, or 1 if only 1 core
+    averaging: tuple
+        The Q-average to carry out over the :math:`S(\vec{q}, t)`, the
+        return value from `intermediate_vector_set`.
+        Tuple elements:
+            - averaging function
+            - positional arguments for function, excluded the first which is
+              assumed to be array :math:`S(\vec{q}, t)`
+            - keyword arguments for function
+
+    Returns
+    -------
+    np.ndarray
+        shape = (#frames)
+    """
+    sf = intermediate_vector_set(tr, q, s_inc, n_cores=n_cores)
+    av_args = list() if averaging[1] is None else averaging[1]
+    return averaging[0](sf, *av_args, **averaging[2])
+
+
+def intermediate_spherical(tr, q_mod, s_inc, n_cores=None):
+    r"""
+    Coherent scattering averaged over scattering for a collection of q-vectors
+
+    Parameters
+    ----------
+    tr: numpy.ndarray
+        Atomic trajectory, shape=(#atoms, #frames, 3)
+    q_mod: numpy.ndarray
+        Array of q-vector moduli shape=(#q-moduli, 1)
+    s_inc: numpy.ndarray
+        Incoherent scattering cross-section, shape=(#atoms, 1)
+    n_cores: int
+        Number of CPU's to use. All cores minus 1, or 1 if only 1 core
+
+    Returns
+    -------
+    np.ndarray
+        shape = (#frames)
+    """
+    q_sets = qvec.sphere_average(q_mod)
+    glog.info("\nCalculating coherent scattering for a set of q-moduli\n")
+    sf = [
+        np.real(intermediate(tr, q_set, s_inc, n_cores=n_cores))
+        for q_set in tqdm(q_sets)
+    ]
+    return np.asarray(sf)

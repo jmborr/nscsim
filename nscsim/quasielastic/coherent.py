@@ -1,5 +1,3 @@
-from __future__ import (print_function, absolute_import)
-
 import numpy as np
 from nscsim.utilities import (glog, map_parallel, shared_array)
 from nscsim import qvec
@@ -38,14 +36,18 @@ def intermediate_amplitudes(tr, q, bc, n_cores=None):
         ----------
         frame: numpy.ndarray
             shape = (#atoms, 3) coordinates of the system
+
+        Returns
+        -------
         """
         exponents = np.tensordot(frame, q, axes=(1, 1))  # shape=(#atoms, #q's)
         exponentials = np.exp(1j * exponents)
         return np.tensordot(bc, exponentials, axes=1)  # shape=(#q's,)
 
     glog.info('\nCalculating coherent amplitudes for one set of q vectors\n')
-    #TODO: close_pool=False is a temporary fix. See issue #31
-    amps = np.array(map_parallel(serial_worker, shared_array(tr), n_cores, close_pool=False))
+    # TODO: close_pool=False is a temporary fix. See issue #31
+    amps = np.array(map_parallel(serial_worker, shared_array(tr), n_cores,
+                                 close_pool=False))
 
     return amps
 
